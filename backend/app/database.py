@@ -65,6 +65,12 @@ class Database:
             return await conn.fetch(query, *args)
 
     @classmethod
+    async def fetchrow(cls, query: str, *args) -> asyncpg.Record | None:
+        """Ejecuta un query y retorna la primera fila (o None)."""
+        async with cls._pool.acquire() as conn:
+            return await conn.fetchrow(query, *args)
+
+    @classmethod
     async def fetchval(cls, query: str, *args):
         """Ejecuta un query y retorna un solo valor escalar."""
         async with cls._pool.acquire() as conn:

@@ -249,6 +249,51 @@ async def listar_rutas():
     return [dict(r) for r in rutas]
 
 
+@app.get("/rutas/{ruta_clave}/trazado", tags=["Consultas"])
+async def trazado_ruta(ruta_clave: str):
+    """
+    Retorna el trazado oficial (LineString) y las paradas de una ruta como GeoJSON.
+
+    Permite al frontend dibujar la ruta en el mapa sin necesidad de datos externos.
+    ST_AsGeoJSON serializa directamente la geometría PostGIS → RFC 7946 GeoJSON.
+    """
+    ruta = await Database.fetchrow(
+        """SELECT nombre, tipo,
+                  ST_AsGeoJSON(geom)::json AS geojson
+           FROM rutas
+           WHERE clave = $1 AND activa = TRUE""",
+        ruta_clave,
+    )
+    if not ruta:
+        raise HTTPException(status_code=404, detail=f"Ruta '{ruta_clave}' no encontrada")
+
+    paradas = await Database.fetch(
+        """SELECT nombre, orden,
+                  ST_Y(geom) AS lat,
+                  ST_X(geom) AS lon
+           FROM paradas_clave
+           WHERE ruta_id = (SELECT id FROM rutas WHERE clave = $1)
+           ORDER BY orden""",
+        ruta_clave,
+    )
+
+    return {
+        "clave": ruta_clave,
+        "nombre": ruta["nombre"],
+        "tipo": ruta["tipo"],
+        "trazado": ruta["geojson"],
+        "paradas": [
+            {
+                "nombre": p["nombre"],
+                "orden": p["orden"],
+                "lat": float(p["lat"]),
+                "lon": float(p["lon"]),
+            }
+            for p in paradas
+        ],
+    }
+
+
 @app.get("/estadisticas", response_model=EstadisticasResponse, tags=["Sistema"])
 async def estadisticas():
     """
