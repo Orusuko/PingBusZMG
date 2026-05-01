@@ -19,6 +19,7 @@ Arquitectura de optimización de recursos:
 """
 
 import hashlib
+import json
 import asyncpg
 from contextlib import asynccontextmanager
 
@@ -277,11 +278,16 @@ async def trazado_ruta(ruta_clave: str):
         ruta_clave,
     )
 
+    # asyncpg devuelve columnas json como string; jsonb como dict.
+    # Normalizamos a dict para que FastAPI no lo doble-serialice.
+    geojson_raw = ruta["geojson"]
+    geojson = json.loads(geojson_raw) if isinstance(geojson_raw, str) else geojson_raw
+
     return {
         "clave": ruta_clave,
         "nombre": ruta["nombre"],
         "tipo": ruta["tipo"],
-        "trazado": ruta["geojson"],
+        "trazado": geojson,
         "paradas": [
             {
                 "nombre": p["nombre"],

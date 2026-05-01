@@ -36,12 +36,11 @@ class Database:
             dsn=dsn,
             min_size=settings.DB_POOL_MIN,
             max_size=settings.DB_POOL_MAX,
-            # statement_cache_size: cachea hasta 100 prepared statements
-            # por conexión. El INSERT de /reportar se prepara una vez y
-            # se reutiliza en todas las llamadas subsecuentes.
-            statement_cache_size=100,
-            # command_timeout: si un query tarda más de 30s, algo está mal.
-            # Fail fast en vez de bloquear el pool.
+            # statement_cache_size=0: obligatorio cuando la conexión pasa por
+            # PgBouncer (Supabase pooler puerto 6543) en modo transaction/statement.
+            # PgBouncer no preserva prepared statements entre transacciones,
+            # lo que causa InvalidSQLStatementNameError en el segundo uso.
+            statement_cache_size=0,
             command_timeout=30,
         )
 
