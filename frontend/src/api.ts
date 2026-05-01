@@ -1,6 +1,10 @@
 import axios from 'axios'
 
-const client = axios.create({ baseURL: '/api' })
+const baseURL = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api'
+
+const client = axios.create({ baseURL })
 
 export interface Ruta {
   clave: string
@@ -30,6 +34,7 @@ export interface ConsultaResponse {
 
 export interface RutaEstadistica {
   clave: string
+  tipo?: string
   pings_activos: number
   unidades_detectadas: number
 }
